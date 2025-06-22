@@ -34,7 +34,7 @@ public class CiReportService {
         String createdQuery = ">" + since.toLocalDate().toString(); // GitHub expects YYYY-MM-DD
     
         List<WorkflowRun> allRuns = new ArrayList<>();
-        int page = 1;
+        int page = 1; //GitHub API is 1-based
     
         try {
             while (true) {

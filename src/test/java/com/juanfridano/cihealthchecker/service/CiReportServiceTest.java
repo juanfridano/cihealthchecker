@@ -7,6 +7,7 @@ import com.juanfridano.cihealthchecker.model.CiHealthReportEntry;
 import com.juanfridano.cihealthchecker.model.GitHubWorkflowResponse;
 import com.juanfridano.cihealthchecker.model.WorkflowRun;
 import feign.FeignException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +21,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
@@ -66,6 +68,17 @@ class CiReportServiceTest {
             eq(1)
         )).thenReturn(response);
         
+        GitHubWorkflowResponse lastResponse = new GitHubWorkflowResponse();
+        lastResponse.setWorkflowRuns(Collections.emptyList());
+        when(gitHubClient.getWorkflowRuns(
+            eq("Bearer test-token"),
+            eq("test-owner"),
+            eq("test-repo"),
+            eq(expectedCreatedQuery),
+            eq(100),
+            eq(2)
+        )).thenReturn(lastResponse);
+
         // When
         List<CiHealthReportEntry> result = ciReportService.generateReport(since);
         
@@ -75,7 +88,7 @@ class CiReportServiceTest {
         assertThat(entry.getWorkflowName()).isEqualTo("Test Workflow");
         assertThat(entry.getTotalRuns()).isEqualTo(3);
         assertThat(entry.getFailures()).isEqualTo(1);
-        assertThat(entry.getFailureRate()).isEqualTo(33.33333333333333);
+        assertThat(entry.getFailureRate()).isCloseTo(33.33333333333333, within(1e-10));
         assertThat(entry.getAvgDurationMinutes()).isEqualTo(15.0);
     }
 
@@ -102,6 +115,17 @@ class CiReportServiceTest {
             eq(1)
         )).thenReturn(response);
         
+        GitHubWorkflowResponse lastResponse = new GitHubWorkflowResponse();
+        lastResponse.setWorkflowRuns(Collections.emptyList());
+        when(gitHubClient.getWorkflowRuns(
+            eq("Bearer test-token"),
+            eq("test-owner"),
+            eq("test-repo"),
+            eq(expectedCreatedQuery),
+            eq(100),
+            eq(2)
+        )).thenReturn(lastResponse);
+
         // When
         List<CiHealthReportEntry> result = ciReportService.generateReport(since);
         
@@ -243,13 +267,16 @@ class CiReportServiceTest {
         // Given
         OffsetDateTime since = OffsetDateTime.now().minusDays(7);
         String expectedCreatedQuery = ">" + since.toLocalDate().toString();
-        
-        FeignException feignException = new FeignException.InternalServerError(
-            "GitHub API error",
-            null,
-            "Internal Server Error".getBytes()
+
+        FeignException feignException = FeignException.errorStatus(
+            "getWorkflowRuns",
+            feign.Response.builder()
+                .status(500)
+                .reason("Internal Server Error")
+                .request(feign.Request.create(feign.Request.HttpMethod.GET, "/", java.util.Collections.emptyMap(), null, null, null))
+                .build()
         );
-        
+
         when(gitHubClient.getWorkflowRuns(
             eq("Bearer test-token"),
             eq("test-owner"),
@@ -288,7 +315,18 @@ class CiReportServiceTest {
             eq(100),
             eq(1)
         )).thenReturn(response);
-        
+
+        GitHubWorkflowResponse lastResponse = new GitHubWorkflowResponse();
+        lastResponse.setWorkflowRuns(Collections.emptyList());
+        when(gitHubClient.getWorkflowRuns(
+            eq("Bearer test-token"),
+            eq("test-owner"),
+            eq("test-repo"),
+            eq(expectedCreatedQuery),
+            eq(100),
+            eq(2)
+        )).thenReturn(lastResponse);
+
         // When
         List<CiHealthReportEntry> result = ciReportService.generateReport(since);
         
@@ -320,6 +358,17 @@ class CiReportServiceTest {
             eq(100),
             eq(1)
         )).thenReturn(response);
+
+        GitHubWorkflowResponse lastResponse = new GitHubWorkflowResponse();
+        lastResponse.setWorkflowRuns(Collections.emptyList());
+        when(gitHubClient.getWorkflowRuns(
+            eq("Bearer test-token"),
+            eq("test-owner"),
+            eq("test-repo"),
+            eq(expectedCreatedQuery),
+            eq(100),
+            eq(2)
+        )).thenReturn(lastResponse);
         
         // When
         List<CiHealthReportEntry> result = ciReportService.generateReport(since);
