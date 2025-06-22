@@ -9,7 +9,6 @@ on:
     - cron: '0 3 * * 1'
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -19,6 +18,13 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
       - name: Build with Maven
         run: ./mvnw clean package -DskipTests
 
@@ -27,6 +33,11 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
       - name: Run tests
         run: ./mvnw test
 
@@ -54,7 +65,10 @@ jobs:
         uses: dependency-check/Dependency-Check_Action@main
         with:
           project: "ci-health-checker"
-          scanpath: "."
+          path: "."
+          format: "HTML"
+          out: "reports"
+          args: "--noupdate"
 
   docker:
     runs-on: ubuntu-latest
