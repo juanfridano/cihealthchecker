@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: cihealthchecker
+
+github:
+  token: ${GITHUB_TOKEN}
+  owner: camunda
+  repo: camunda
